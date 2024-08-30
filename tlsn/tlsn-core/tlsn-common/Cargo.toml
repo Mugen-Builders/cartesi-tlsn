@@ -1,0 +1,23 @@
+[package]
+name = "tlsn-common"
+description = "Common code shared between tlsn-prover and tlsn-verifier"
+version = "0.1.0-alpha.6"
+edition = "2021"
+
+[features]
+default = []
+
+[dependencies]
+mpz-garble = { git = "https://github.com/privacy-scaling-explorations/mpz", rev = "b8ae7ac" }
+mpz-ot = { git = "https://github.com/privacy-scaling-explorations/mpz", rev = "b8ae7ac" }
+mpz-common = { git = "https://github.com/privacy-scaling-explorations/mpz", rev = "b8ae7ac" }
+
+futures = "0.3"
+serio = { git = "https://github.com/tlsnotary/tlsn-utils", rev = "45370cc", features = [
+	"codec",
+	"bincode",
+] }
+uid-mux = { git = "https://github.com/tlsnotary/tlsn-utils", rev = "45370cc", features = [
+	"serio",
+] }
+tracing = "0.1"

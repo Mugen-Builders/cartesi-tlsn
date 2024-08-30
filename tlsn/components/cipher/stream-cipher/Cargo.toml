@@ -1,0 +1,37 @@
+[package]
+name = "tlsn-stream-cipher"
+authors = ["TLSNotary Team"]
+description = "2PC stream cipher implementation"
+keywords = ["tls", "mpc", "2pc", "stream-cipher"]
+categories = ["cryptography"]
+license = "MIT OR Apache-2.0"
+version = "0.1.0-alpha.6"
+edition = "2021"
+
+[features]
+default = ["mock"]
+rayon = ["mpz-garble/rayon"]
+mock = []
+
+[dependencies]
+mpz-circuits = { git = "https://github.com/privacy-scaling-explorations/mpz", rev = "b8ae7ac" }
+mpz-garble = { git = "https://github.com/privacy-scaling-explorations/mpz", rev = "b8ae7ac" }
+tlsn-utils = { git = "https://github.com/tlsnotary/tlsn-utils", rev = "45370cc" }
+aes = "0.8"
+ctr = "0.9"
+cipher = "0.4"
+async-trait = "0.1"
+thiserror = "1"
+derive_builder = "0.12"
+tracing = "0.1"
+opaque-debug = "0.3"
+
+[dev-dependencies]
+futures = "0.3"
+tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread"] }
+rstest = { version = "0.17", features = ["async-timeout"] }
+criterion = { version = "0.4", features = ["async_tokio"] }
+
+[[bench]]
+name = "mock"
+harness = false
