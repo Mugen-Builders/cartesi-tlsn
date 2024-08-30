@@ -1,3 +1,0 @@
-[workspace]
-members = ["tlsn-core", "tlsn-verifier", "tlsn-common"]
-resolver = "2"
