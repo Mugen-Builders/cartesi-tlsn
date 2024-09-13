@@ -1,4 +1,4 @@
-# Cartesi + TLSNotary
+# Cartesi <> TLSNotary
 
 [TLSN](https://tlsnotary.org/) is a protocol created and supported by Privacy and Scaling Explorations, a team supported by the Ethereum Foundation. It allows users to securely export data from any website. Behind the scenes, this is an implementation of the [zkTLS](https://telah.vc/zktls) protocol, conceived some time ago.
 
