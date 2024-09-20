@@ -6,4 +6,20 @@ Using Zero Knowledge Proof (ZKP) technology (WIP), data from web2 requests can b
 
 In this sense, this template allows use cases like the [ones presented](https://tlsnotary.org/use-cases) to run with the same guarantees as an on-chain environment, in a much easier way, using the same [dependencies already employed in the project](https://github.com/tlsnotary/tlsn/blob/main/tlsn/tlsn-verifier/Cargo.toml) through the CVM ( Cartesi virtual machine ).
 
-![image](https://github.com/user-attachments/assets/f25aa5ac-1ec5-448a-bf2c-73c5a04ccb3a)
+![image](https://github.com/user-attachments/assets/2a0e1ab5-b61a-4b17-a170-dafc0d7d445c)
+
+## How to run:
+
+```bash
+$ cartesi build
+```
+
+```bash
+$ cartesi run
+```
+
+Then, send any input to call the verifier, which will read the proof stored in the machine's file system:
+
+```bash
+$ cartesi send generic
+```
