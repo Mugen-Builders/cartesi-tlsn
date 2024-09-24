@@ -68,7 +68,8 @@ ENV PATH="/opt/cartesi/bin:/opt/cartesi/dapp:${PATH}"
 WORKDIR /opt/cartesi/dapp
 COPY --from=builder /opt/cartesi/dapp/target/riscv64gc-unknown-linux-gnu/release/dapp .
 
-COPY ./simple_proof.json ..
+# COPY ./auth_proof.json ..
+# COPY ./user_proof.json ..
 
 COPY ./notary.pub ..
 
