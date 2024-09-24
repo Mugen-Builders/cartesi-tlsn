@@ -1,0 +1,8 @@
+.cartesi
+
+# Rust ignore file
+debug/
+target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
