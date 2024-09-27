@@ -50,7 +50,7 @@ impl Application for TwitterApp {
         env: &impl Environment,
         metadata: Metadata,
         payload: &[u8],
-        deposit: Option<Deposit>,
+        _deposit: Option<Deposit>,
     ) -> Result<FinishStatus, Box<dyn Error>> {
         let input: AdvanceInput = serde_json::from_slice(payload)?;
 

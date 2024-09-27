@@ -11,10 +11,10 @@ RUN <<EOF
 set -e
 apt update
 apt install -y --no-install-recommends \
-    build-essential=12.9ubuntu3 \
-    ca-certificates=20230311ubuntu0.22.04.1 \
-    g++-riscv64-linux-gnu=4:11.2.0--1ubuntu1 \
-    wget=1.21.2-2ubuntu1
+		build-essential=12.9ubuntu3 \
+		ca-certificates \
+		g++-riscv64-linux-gnu=4:11.2.0--1ubuntu1 \
+		wget
 EOF
 
 RUN set -eux; \
@@ -67,9 +67,6 @@ ENV PATH="/opt/cartesi/bin:/opt/cartesi/dapp:${PATH}"
 
 WORKDIR /opt/cartesi/dapp
 COPY --from=builder /opt/cartesi/dapp/target/riscv64gc-unknown-linux-gnu/release/dapp .
-
-# COPY ./auth_proof.json ..
-# COPY ./user_proof.json ..
 
 COPY ./notary.pub ..
 
