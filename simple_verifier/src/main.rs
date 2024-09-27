@@ -1,7 +1,8 @@
 use crabrolls::prelude::*;
+use elliptic_curve::pkcs8::DecodePublicKey;
+use ethabi::{token, Address, Token, Uint};
 use std::error::Error;
 use std::{str, time::Duration};
-use elliptic_curve::pkcs8::DecodePublicKey;
 use tlsn_core::proof::{SessionProof, TlsProof};
 
 struct SimpleVerifierApp;
@@ -18,70 +19,115 @@ impl Application for SimpleVerifierApp {
         env: &impl Environment,
         metadata: Metadata,
         payload: &[u8],
-        _deposit: Option<Deposit>,
+        deposit: Option<Deposit>,
     ) -> Result<FinishStatus, Box<dyn Error>> {
-        let input: TlsProof = serde_json::from_slice(payload)?;
+        match deposit {
+            Some(Deposit::Ether { sender, amount }) => {
+                println!(
+                    "Received deposit of {} ether from {}",
+                    units::wei::to_ether(amount),
+                    sender
+                );
 
-        let TlsProof {
-            // The session proof establishes the identity of the server and the commitments
-            // to the TLS transcript.
-            session,
-            // The substrings proof proves select portions of the transcript, while redacting
-            // anything the Prover chose not to disclose.
-            substrings,
-        } = input;
+                let balance = env.ether_balance(sender).await;
+                println!(
+                    "Current balance of sender: {} ether",
+                    units::wei::to_ether(balance)
+                );
+            }
+            Some(Deposit::ERC20 {
+                sender,
+                token,
+                amount,
+            }) => {
+                println!(
+                    "Received deposit of {} ERC20 tokens from {}",
+                    amount, sender
+                );
 
-        // Verify the session proof against the Notary's public key
-        //
-        // This verifies the identity of the server using a default certificate verifier which trusts
-        // the root certificates from the `webpki-roots` crate.
-        session
-            .verify_with_default_cert_verifier(notary_pubkey())
-            .unwrap();
+                let balance = env.erc20_balance(sender, token).await;
+                println!("Current balance of sender's ERC20 tokens: {}", balance);
+            }
+            Some(Deposit::ERC721 { sender, token, id }) => {
+                println!(
+                    "Received ERC721 token with ID {} from {}, with token address {}",
+                    id, sender, token
+                );
+            }
+            Some(Deposit::ERC1155 {
+                sender,
+                token,
+                ids_amounts,
+            }) => {
+                println!("Received ERC1155 deposit from {}", sender);
 
-        let SessionProof {
-            // The session header that was signed by the Notary is a succinct commitment to the TLS transcript.
-            header,
-            // This is the session_info, which contains the server_name, that is checked against the
-            // certificate chain shared in the TLS handshake.
-            session_info,
-            ..
-        } = session;
+                for (id, _amount) in ids_amounts {
+                    let balance = env.erc1155_balance(sender, token, id).await;
+                    println!("Current balance of ERC1155 token ID {}: {}", id, balance);
+                }
+            }
+            None => {
+                let proof: TlsProof = serde_json::from_slice(payload)?;
 
-        // The time at which the session was recorded
-        let time = Duration::from_secs(metadata.timestamp) + Duration::from_secs(header.time());
+                let TlsProof {
+                    session,
+                    substrings,
+                } = proof;
 
-        // Verify the substrings proof against the session header.
-        //
-        // This returns the redacted transcripts
-        let (mut sent, mut recv) = substrings.verify(&header).unwrap();
+                session
+                    .verify_with_default_cert_verifier(notary_pubkey())
+                    .map_err(|e| format!("Session verification failed: {:?}", e))?;
 
-        // Replace the bytes which the Prover chose not to disclose with 'X'
-        sent.set_redacted(b'X');
-        recv.set_redacted(b'X');
+                let SessionProof {
+                    header,
+                    session_info,
+                    ..
+                } = session;
 
-        println!("-------------------------------------------------------------------");
-        println!(
-            "Successfully verified that the bytes below came from a session with {:?} at {:?}.",
-            session_info.server_name, time
-        );
-        println!("Note that the bytes which the Prover chose not to disclose are shown as X.");
-        println!();
-        println!("Bytes sent:");
-        println!();
-        print!("{}", String::from_utf8(sent.data().to_vec()).unwrap());
-        println!();
-        println!("Bytes received:");
-        println!();
-        println!("{}", String::from_utf8(recv.data().to_vec()).unwrap());
-        println!("-------------------------------------------------------------------");
+                let time =
+                    Duration::from_secs(metadata.timestamp) + Duration::from_secs(header.time());
 
-        println!(
-            "Advance method called with payload: {:?}",
-            String::from_utf8_lossy(payload)
-        );
+                let (mut sent, mut recv) = substrings
+                    .verify(&header)
+                    .map_err(|e| format!("Substrings verification failed: {:?}", e))?;
 
-        env.send_notice(payload).await?;
+                sent.set_redacted(b'X');
+                recv.set_redacted(b'X');
+
+                println!("-------------------------------------------------------------------");
+                println!(
+                    "Successfully verified that the bytes below came from a session with {:?} at {:?}.",
+                    session_info.server_name, time
+                );
+                println!(
+                    "Note that the bytes which the Prover chose not to disclose are shown as X."
+                );
+                println!();
+                println!("Bytes sent:");
+                println!(
+                    "{}",
+                    String::from_utf8(sent.data().to_vec())
+                        .unwrap_or_else(|_| "Invalid UTF-8".to_string())
+                );
+                println!();
+                println!("Bytes received:");
+                println!(
+                    "{}",
+                    String::from_utf8(recv.data().to_vec())
+                        .unwrap_or_else(|_| "Invalid UTF-8".to_string())
+                );
+                println!("-------------------------------------------------------------------");
+
+                let token_address = address!("0x92C6bcA388E99d6B304f1Af3c3Cd749Ff0b591e2");
+                let vault = address!("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
+                env.erc20_withdraw(
+                    vault,
+                    token_address,
+                    env.erc20_balance(vault, token_address).await,
+                )
+                .await?;
+            }
+        }
         Ok(FinishStatus::Accept)
     }
 
@@ -110,9 +156,6 @@ async fn main() {
 
 /// Returns a Notary pubkey trusted by this Verifier
 fn notary_pubkey() -> p256::PublicKey {
-    let pem_file = str::from_utf8(include_bytes!(
-        "../notary.pub"
-    ))
-    .unwrap();
+    let pem_file = str::from_utf8(include_bytes!("../notary.pub")).unwrap();
     p256::PublicKey::from_public_key_pem(pem_file).unwrap()
 }
