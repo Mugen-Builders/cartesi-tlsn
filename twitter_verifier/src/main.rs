@@ -1,13 +1,13 @@
 use crabrolls::prelude::*;
 use elliptic_curve::pkcs8::DecodePublicKey;
-use ethabi::ethereum_types::U256;
-use ethabi::Address;
-use ethabi::Token;
+use std::env;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use ethabi::Address;
 use std::collections::HashMap;
 use std::error::Error;
 use std::str;
+
 use std::sync::Mutex;
 use tlsn_core::proof::{SessionProof, TlsProof};
 
@@ -58,56 +58,8 @@ impl Application for TwitterApp {
             AdvanceInput::ProofOfOwnership { username, proof } => {
                 // Verify the proof of ownership
                 verify_account_ownership(username.clone(), proof)?;
-                println!(
-                    "Address {:?} proved ownership of the username {}",
-                    metadata.sender, username
-                );
-
-                let abi_json = r#"
-                [
-                    {
-                        "name": "safeMint",
-                        "inputs": [
-                            {
-                                "internalType": "address",
-                                "name": "to",
-                                "type": "address"
-                            },
-                            {
-                                "internalType": "uint256",
-                                "name": "tokenId",
-                                "type": "uint256"
-                            },
-                            {
-                                "internalType": "string",
-                                "name": "uri",
-                                "type": "string"
-                            }
-                        ],
-                        "outputs": [],
-                        "type": "function"
-                    }
-                ]
-                "#;
-
-                let function_name = "safeMint";
-                let mut token_id = U256::from(1);
-
-                let params = vec![
-                    Token::Address(metadata.sender),
-                    Token::Uint(token_id),
-                    Token::String(username),
-                ];
-                let payload = abi::encode::function_call(abi_json, function_name, params)
-                    .expect("Failed to encode function call");
-                env.send_voucher(
-                    address!("0x1234567890123456789012345678901234567890"),
-                    payload,
-                )
-                .await?;
-
-                // Increment tokenId
-                token_id += U256::from(1);
+                env.send_notice(serde_json::to_vec(&format!("Address {:?} proved ownership of the username {}", metadata.sender, username))?)
+                    .await?;
             }
             AdvanceInput::ProofOfTheNumberOfFollowers { username, proof } => {
                 // Verify the proof of the number of followers
@@ -168,7 +120,10 @@ impl Application for TwitterApp {
 #[async_std::main]
 async fn main() {
     let app = TwitterApp::new();
-    let options = RunOptions::default();
+    let mut options = RunOptions::default();
+    if let Ok(rollup_url) = env::var("ROLLUP_HTTP_SERVER_URL") {
+        options.rollup_url = Box::leak(rollup_url.into_boxed_str());
+    }
     if let Err(e) = Supervisor::run(app, options).await {
         eprintln!("Error: {}", e);
     }

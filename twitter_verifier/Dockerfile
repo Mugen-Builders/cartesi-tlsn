@@ -63,14 +63,14 @@ rm -rf /var/lib/apt/lists/* /var/log/* /var/cache/*
 useradd --create-home --user-group dapp
 EOF
 
-ENV PATH="/opt/cartesi/bin:/opt/cartesi/dapp:${PATH}"
+WORKDIR /var/opt/cartesi-app
 
-WORKDIR /opt/cartesi/dapp
+ENV PATH="/opt/cartesi/bin:${PATH}"
+
 COPY --from=builder /opt/cartesi/dapp/target/riscv64gc-unknown-linux-gnu/release/dapp .
 
 COPY ./notary.pub ..
 
-ENV ROLLUP_HTTP_SERVER_URL="http://127.0.0.1:5004"
-
 ENTRYPOINT ["rollup-init"]
-CMD ["dapp"]
+
+CMD ["/var/opt/cartesi-app/dapp"]
