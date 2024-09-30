@@ -1,6 +1,6 @@
 use crabrolls::prelude::*;
 use elliptic_curve::pkcs8::DecodePublicKey;
-use ethabi::{token, Address, Token, Uint};
+use ethabi::{Address};
 use std::error::Error;
 use std::{str, time::Duration};
 use tlsn_core::proof::{SessionProof, TlsProof};
