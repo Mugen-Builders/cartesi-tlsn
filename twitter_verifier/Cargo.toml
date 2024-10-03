@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 async-std = "1.12.0"
-crabrolls = "2.0.0"
+crabrolls = {git="https://github.com/henriquemarlon/crabrolls", tag = "v2.0.1-avail", package = "crabrolls"}
 ethabi = "18.0.0"
 tlsn-core = {git="https://github.com/tlsnotary/tlsn", tag = "v0.1.0-alpha.6", package = "tlsn-core"}
 tlsn-verifier = {git="https://github.com/tlsnotary/tlsn", tag = "v0.1.0-alpha.6", package = "tlsn-verifier"}
